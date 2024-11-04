@@ -1,0 +1,7 @@
+pandas
+xgboost
+boto3
+joblib
+scikit-learn
+fsspec
+s3fs
