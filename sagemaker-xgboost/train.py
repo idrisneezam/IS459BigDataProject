@@ -14,15 +14,25 @@ logger = logging.getLogger(__name__)
 # Initialize S3 client
 s3_client = boto3.client("s3")
 
-# Define bucket and paths for model output
+# Define bucket and prefix for latest data
 bucket_name = "projectairlinedatapipeline"
-data_file = "s3://projectairlinedatapipeline/processed_data/latest/filtered_airline_data.csv/part-00000-102abdf6-a81d-4219-8404-f9bd8c41df44-c000.csv"
-timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-timestamped_model_path = f"models/xgboost-training-{timestamp}/xgb_model.joblib"
-latest_model_path = "models/latest/xgb_model.joblib"
+data_prefix = "processed_data/latest/filtered_airline_data.csv/"
+
+# Fetch the latest CSV file dynamically
+def get_latest_csv(bucket, prefix):
+    response = s3_client.list_objects_v2(Bucket=bucket, Prefix=prefix)
+    files = [obj['Key'] for obj in response.get('Contents', []) if obj['Key'].endswith('.csv')]
+    if not files:
+        raise FileNotFoundError("No CSV files found in the specified S3 path.")
+    # Assuming the most recent file has the latest timestamp in the filename
+    latest_file = sorted(files)[-1]
+    return f"s3://{bucket}/{latest_file}"
+
+# Retrieve the latest data file
+data_file = get_latest_csv(bucket_name, data_prefix)
+logger.info(f"Loading data from {data_file}...")
 
 # Load data from S3
-logger.info(f"Loading data from {data_file}...")
 df = pd.read_csv(data_file)
 
 # Define column names based on provided data structure
@@ -58,6 +68,11 @@ xgb_model.fit(X_train, y_train)
 local_model_path = "/opt/ml/model/xgb_model.joblib"
 joblib.dump(xgb_model, local_model_path)
 logger.info(f"Model saved locally at {local_model_path}")
+
+# Define paths for model output
+timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+timestamped_model_path = f"models/xgboost-training-{timestamp}/xgb_model.joblib"
+latest_model_path = "models/latest/xgb_model.joblib"
 
 # Upload model to the timestamped path in S3
 s3_client.upload_file(local_model_path, bucket_name, timestamped_model_path)

@@ -3,5 +3,5 @@ xgboost
 boto3
 joblib
 scikit-learn
-fsspec
-s3fs
+fsspec>=2022.5.0
+s3fs>=0.4.2

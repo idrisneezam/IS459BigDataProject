@@ -15,4 +15,4 @@ RUN chmod +x train.py
 RUN pip install -r requirements.txt
 
 # Use the full path for python in the entrypoint
-ENTRYPOINT ["/usr/local/bin/python", "train.py"]
+ENTRYPOINT ["python3", "train.py"]
