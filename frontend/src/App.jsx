@@ -1,9 +1,9 @@
-import { SearchQueryPage } from '@/pages/search/searchQueryPage'
+import { PredictionQueryPage } from '@/pages/q1/PredictionQueryPage'
 
 function App() {
 
   return (
-    <SearchQueryPage />
+    <PredictionQueryPage />
   )
 }
 

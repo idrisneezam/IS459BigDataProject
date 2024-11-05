@@ -1,2 +1,2 @@
-export * from "@/components/form/SearchForm";
-export * from "@/components/form/SearchDisplayResult";
+export * from "@/components/form/PredictiveForm";
+export * from "@/components/form/PredictiveResultDisplay";

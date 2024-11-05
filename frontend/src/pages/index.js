@@ -1,1 +1,1 @@
-export * from "@/pages/search/searchQueryPage";
+export * from "@/pages/q1/PredictionQueryPage";
