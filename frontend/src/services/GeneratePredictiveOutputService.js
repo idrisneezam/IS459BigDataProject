@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://<dummy data>'; // Replace with your actual API endpoint
+const API_URL = 'https://fyj8mwh28k.execute-api.us-east-1.amazonaws.com/generateoutputahmad'
 
 // Send prediction data to the API and retrieve the result
 export async function fetchOutputResults(formData) {
