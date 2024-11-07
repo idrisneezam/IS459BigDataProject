@@ -91,16 +91,15 @@ df_joined = df_joined.drop(*wage_columns)
 # Drop unnecessary columns
 df_joined = df_joined.drop("AirTime", "Distance", "FlightNum", "TaxiIn", "TailNum")
 
-# Change NA values to 0 except for "UniqueCarrier", "Origin", "Dest" and "CancellationCode"
-excluded_columns = ["UniqueCarrier", "Origin", "Dest", "CancellationCode"]
+# Replace "NA" string values with actual null values (None)
+df_joined = df_joined.replace("NA", None)
 
-# Replace null values with 0 for all other columns
-df_joined = df_joined.select(
-    *[
-        col(c).cast("float").na.fill(0) if c not in excluded_columns else col(c)
-        for c in df_joined.columns
-    ]
-)
+# # Define the columns that should not have null values filled with 0
+# excluded_columns = ["UniqueCarrier", "Origin", "Dest", "CancellationCode"]
+
+# # Replace null values with 0 for all other columns
+# fill_values = {c: 0 for c in df_joined.columns if c not in excluded_columns}
+# df_joined = df_joined.na.fill(fill_values)
 
 ######################################## SAVE FILE ################################################
 # Save processed data as a single file to the unique timestamped path
