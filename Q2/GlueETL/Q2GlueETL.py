@@ -89,7 +89,18 @@ wage_columns = [col for col in wages_df.columns if col != "Year"]
 df_joined = df_joined.drop(*wage_columns)
 
 # Drop unnecessary columns
-# df_joined = df_joined.drop("AirTime", "Distance", "ArrTime", "CRSArrTime", "CarrierDelay", "FlightNum")
+df_joined = df_joined.drop("AirTime", "Distance", "FlightNum", "TaxiIn", "TailNum")
+
+# Change NA values to 0 except for "UniqueCarrier", "Origin", "Dest" and "CancellationCode"
+excluded_columns = ["UniqueCarrier", "Origin", "Dest", "CancellationCode"]
+
+# Replace null values with 0 for all other columns
+df_joined = df_joined.select(
+    *[
+        col(c).cast("float").na.fill(0) if c not in excluded_columns else col(c)
+        for c in df_joined.columns
+    ]
+)
 
 ######################################## SAVE FILE ################################################
 # Save processed data as a single file to the unique timestamped path
