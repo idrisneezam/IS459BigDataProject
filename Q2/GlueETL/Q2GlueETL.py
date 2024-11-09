@@ -14,7 +14,8 @@ spark = glueContext.spark_session
 # Define paths for input and output
 source_bucket = "projectairlinedatapipeline"
 input_path = f"s3://{source_bucket}/raw_data/airline.csv.shuffle"
-wages_path = f"s3://{source_bucket}/raw_data_wages/Airline_fuel_wages.csv"
+wages_raw_path = f"s3://{source_bucket}/raw_data_wages_fuel/wages_raw_data.csv"
+fuel_raw_path = f"s3://{source_bucket}/raw_data_wages_fuel/fuel_raw_data.csv"
 
 # Generate a unique timestamp to avoid conflicts
 current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
@@ -24,7 +25,8 @@ temp_output_path = f"s3://{source_bucket}/q2_processed_data/temp_filtered_airlin
 
 # Load data from S3
 df = spark.read.format("csv").option("header", "true").load(input_path)
-wages_df = spark.read.format("csv").option("header", "true").load(wages_path)
+fuel_df = spark.read.format("csv").option("header", "true").load(fuel_raw_path)
+wages_df = spark.read.format("csv").option("header", "true").load(wages_raw_path)
 
 # Filtering
 selected_carriers = ['DL', 'WN', 'AA']
@@ -36,10 +38,12 @@ df_filtered = df_filtered.filter(
 
 df_filtered = df_filtered.dropna().filter(df_filtered['DepDelay'] > 0)
 
-
 ################################## CALCULATE WAGES ################################################
-# Rename columns in wages_df:
-wages_df = wages_df.withColumnRenamed("Jet Fuel (Yearly Average, Dollars/Gallon)", "JetFuelCost") \
+# combining the wages and fuel data
+q2_raw_df = wages_df.join(fuel_df, "Year", "inner")
+
+# Rename columns in q2_raw_df:
+q2_raw_df = q2_raw_df.withColumnRenamed("Jet Fuel (Yearly Average, Dollars/Gallon)", "JetFuelCost") \
                    .withColumnRenamed("AA Pilot Wages", "AAPilotWages") \
                    .withColumnRenamed("AA Flight Attendants Wages", "AAFlightAttendantsWages") \
                    .withColumnRenamed("DL Pilot Wages", "DLPilotWages") \
@@ -47,12 +51,12 @@ wages_df = wages_df.withColumnRenamed("Jet Fuel (Yearly Average, Dollars/Gallon)
                    .withColumnRenamed("WN Pilot Wages", "WNPilotWages") \
                    .withColumnRenamed("WN Flight Attendants Wages", "WNFlightAttendantsWages")
                    
-# Join df_filtered with wages_df
-df_joined = df_filtered.join(wages_df, "Year", "left")
+# Join df_filtered with q2_raw_df
+df_joined = df_filtered.join(q2_raw_df, "Year", "left")
 
 # Calculate wages 
 average_pilot = 2
-average_attendant = 10
+average_attendant = 4
 df_joined = df_joined.withColumn(
     "WagesCost",
     when(
@@ -70,6 +74,12 @@ df_joined = df_joined.withColumn(
 # Assuming a known average fuel consumption rate (in gallons/hour)
 fuel_consumption_rate = 20  
 
+# Set TaxiOut to 0 if it is "NA"
+df_joined = df_joined.withColumn(
+    "TaxiOut",
+    when(col("TaxiOut") == "NA", 0).otherwise(col("TaxiOut").cast(FloatType()))
+)
+
 # Calculate fuel cost wasted during delays
 df_joined = df_joined.withColumn(
     "FuelCost",
@@ -84,8 +94,10 @@ df_joined = df_joined.withColumn("WagesCost", round(col("WagesCost"), 2)) \
                      .withColumn("FuelCost", round(col("FuelCost"), 2)) \
                      .withColumn("TotalCost", round(col("WagesCost") + col("FuelCost"), 2))
 
-# Drop wage-related columns from wages_df
-wage_columns = [col for col in wages_df.columns if col != "Year"]
+
+
+# Drop wage-related columns from q2_raw_df
+wage_columns = [col for col in q2_raw_df.columns if col != "Year"]
 df_joined = df_joined.drop(*wage_columns)
 
 # Drop unnecessary columns
@@ -93,13 +105,6 @@ df_joined = df_joined.drop("AirTime", "Distance", "FlightNum", "TaxiIn", "TailNu
 
 # Replace "NA" string values with actual null values (None)
 df_joined = df_joined.replace("NA", None)
-
-# # Define the columns that should not have null values filled with 0
-# excluded_columns = ["UniqueCarrier", "Origin", "Dest", "CancellationCode"]
-
-# # Replace null values with 0 for all other columns
-# fill_values = {c: 0 for c in df_joined.columns if c not in excluded_columns}
-# df_joined = df_joined.na.fill(fill_values)
 
 ######################################## SAVE FILE ################################################
 # Save processed data as a single file to the unique timestamped path
