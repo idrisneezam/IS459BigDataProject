@@ -1,6 +1,6 @@
 import boto3
 import json
-import os
+import uuid
 
 # Initialize QuickSight client
 quicksight = boto3.client('quicksight')
@@ -15,10 +15,15 @@ def lambda_handler(event, context):
         # Log the event
         print("Received event:", json.dumps(event))
 
+        # Generate a unique ingestion ID (UUID)
+        ingestion_id = str(uuid.uuid4())
+
         # Trigger QuickSight dataset refresh
-        response = quicksight.update_data_set_refresh_schedule(
-            AwsAccountId=AWS_ACCOUNT_ID,
-            DataSetId=QUICKSIGHT_DATASET_ID
+        response = quicksight.create_ingestion(
+            DataSetId= QUICKSIGHT_DATASET_ID,
+            IngestionId= ingestion_id,
+            AwsAccountId= AWS_ACCOUNT_ID,
+            IngestionType= 'FULL_REFRESH'
         )
 
         # Log the response
