@@ -32,7 +32,7 @@ df = df.select(columns_needed)
 
 selected_carriers = ['DL', 'WN', 'AA']
 selected_destinations = ['ORD', 'ATL', 'DFW']
-df_filtered = df.filter((df['UniqueCarrier'].isin(selected_carriers)) & (df['Dest'].isin(selected_destinations)))
+df_filtered = df.filter((df['UniqueCarrier'].isin(selected_carriers)) & (df['Origin'].isin(selected_destinations)))
 df_filtered = df_filtered.dropna().filter(df_filtered['DepDelay'] >= 0)
 
 df_filtered = df_filtered.withColumn("CRSDepTime", F.format_string("%04d", df_filtered["CRSDepTime"].cast(IntegerType())))
