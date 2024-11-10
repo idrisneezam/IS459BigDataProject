@@ -3,6 +3,7 @@ import { Container, Typography, Box, TextField, Button, MenuItem } from "@mui/ma
 import { fetchOutputResults } from "@/services/GeneratePredictiveOutputService";
 import * as d3 from "d3";
 import airplaneIcon from "@/assets/airplane.svg"; // Make sure this file exists in your assets
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Dropdown options
 const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1); // 1 to 12
@@ -38,6 +39,13 @@ const getDelayDescription = (prediction) => {
 };
 
 export function PredictionQueryPage() {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Determine if the current page is active
+    const isQ1Active = location.pathname === "/Q1";
+    const isQ2Active = location.pathname === "/Q2";
+
     const [formData, setFormData] = useState({
         Year: 2024,
         Month: 10,
@@ -107,76 +115,129 @@ export function PredictionQueryPage() {
     }, []);
 
     return (
-        <Container maxWidth="sm" style={{ position: "relative", zIndex: 1 }}>
+        <Container maxWidth="lg" style={{ position: "relative", zIndex: 1 }}>
             <svg id="background-svg" style={{ position: "fixed", top: 0, left: 0, zIndex: -1 }}></svg>
 
-            <Box sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.8)", borderRadius: 2 }} textAlign="center">
-                <Typography variant="h4" component="h1" gutterBottom>
-                    Departure Flight Delay Prediction Dashboard
-                </Typography>
-
-                {/* Input fields for prediction */}
-                <TextField fullWidth margin="normal" label="Year" name="Year" type="number" value={formData.Year} onChange={handleChange} />
-                <TextField fullWidth select margin="normal" label="Month" name="Month" value={formData.Month} onChange={handleChange}>
-                    {monthOptions.map((month) => <MenuItem key={month} value={month}>{month}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth select margin="normal" label="Day" name="Day" value={formData.Day} onChange={handleChange}>
-                    {dayOptions.map((day) => <MenuItem key={day} value={day}>{day}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth select margin="normal" label="Day of Week" name="DayOfWeek" value={formData.DayOfWeek} onChange={handleChange}>
-                    {dayOfWeekOptions.map((day) => <MenuItem key={day} value={day}>{day}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth margin="normal" label="Departure Time (DepTime)" name="DepTime" type="number" value={formData.DepTime} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Scheduled Departure Time (CRSDepTime)" name="CRSDepTime" type="number" value={formData.CRSDepTime} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Elapsed Time (CRSElapsedTime)" name="CRSElapsedTime" type="number" value={formData.CRSElapsedTime} onChange={handleChange} />
-                <TextField fullWidth select margin="normal" label="Origin Airport" name="Origin" value={formData.Origin} onChange={handleChange}>
-                    {airportOptions.map((airport) => <MenuItem key={airport.value} value={airport.value}>{airport.label}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth select margin="normal" label="Destination Airport" name="Dest" value={formData.Dest} onChange={handleChange}>
-                    {airportOptions.map((airport) => <MenuItem key={airport.value} value={airport.value}>{airport.label}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth select margin="normal" label="Carrier" name="Carrier" value={formData.Carrier} onChange={handleChange}>
-                    {carrierOptions.map((carrier) => <MenuItem key={carrier.value} value={carrier.value}>{carrier.label}</MenuItem>)}
-                </TextField>
-                <TextField fullWidth margin="normal" label="Flight Number (FlightNum)" name="FlightNum" type="number" value={formData.FlightNum} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Departure Hour (DepHour)" name="DepHour" type="number" value={formData.DepHour} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Departure Minute (DepMinute)" name="DepMinute" type="number" value={formData.DepMinute} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Arrival Hour (ArrHour)" name="ArrHour" type="number" value={formData.ArrHour} onChange={handleChange} />
-                <TextField fullWidth margin="normal" label="Arrival Minute (ArrMinute)" name="ArrMinute" type="number" value={formData.ArrMinute} onChange={handleChange} />
-                <TextField
-                    fullWidth
-                    margin="normal"
-                    label="Cancelled"
-                    name="Cancelled"
-                    type="number"
-                    value={formData.Cancelled}
-                    onChange={handleChange}
-                />
-
-                <TextField
-                    fullWidth
-                    select
-                    margin="normal"
-                    label="Time of Day"
-                    name="TimeOfDay"
-                    value={formData.TimeOfDay}
-                    onChange={handleChange}
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                position="relative"
+            >
+                <Box
+                sx={{
+                    p: 3,
+                    backgroundColor: "rgba(255, 255, 255, 0.8)",
+                    borderRadius: 2,
+                    width: "300px",
+                    position: "fixed",
+                    top: "20px",
+                    left: "calc(50% - 600px - 32px)",
+                    zIndex: 2,
+                }}
                 >
-                    {timeOfDayOptions.map((time) => (
-                        <MenuItem key={time} value={time}>{time}</MenuItem>
-                    ))}
-                </TextField>
+                    <Button
+                        variant="contained"
+                        sx={{
+                            color: "black",
+                            backgroundColor: isQ1Active ? "green" : "white",
+                            '&:hover': { backgroundColor: isQ1Active ? "green" : "#f0f0f0" },
+                        }}
+                        onClick={() => navigate("/Q1")}
+                    >
+                        Q1
+                    </Button>
 
-                <Button variant="contained" color="primary" onClick={addSearchResult}>
-                    Get Prediction
-                </Button>
+                    <Button
+                        variant="contained"
+                        sx={{
+                            color: "black",
+                            backgroundColor: isQ2Active ? "green" : "white",
+                            '&:hover': { backgroundColor: isQ2Active ? "green" : "#f0f0f0" },
+                        }}
+                        onClick={() => navigate("/Q2")}
+                    >
+                        Q2
+                    </Button>
+                </Box>
 
-                {predictionResult !== null && (
-                    <Box mt={3}>
-                        <Typography variant="h6">Prediction Result:</Typography>
-                        <Typography variant="body1">{predictionResult}</Typography>
-                    </Box>
-                )}
+                {/* <Box sx={{ p: 3, backgroundColor: "rgba(255, 255, 255, 0.8)", borderRadius: 2 }} textAlign="center"> */}
+                <Box
+                    sx={{
+                        p: 3,
+                        backgroundColor: "rgba(255, 255, 255, 0.8)",
+                        borderRadius: 2,
+                        width: "600px",
+                        textAlign: "center",
+                    }}
+                >
+                    <Typography variant="h4" component="h1" gutterBottom>
+                        Departure Flight Delay Prediction Dashboard
+                    </Typography>
+
+                    {/* Input fields for prediction */}
+                    <TextField fullWidth margin="normal" label="Year" name="Year" type="number" value={formData.Year} onChange={handleChange} />
+                    <TextField fullWidth select margin="normal" label="Month" name="Month" value={formData.Month} onChange={handleChange}>
+                        {monthOptions.map((month) => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth select margin="normal" label="Day" name="Day" value={formData.Day} onChange={handleChange}>
+                        {dayOptions.map((day) => <MenuItem key={day} value={day}>{day}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth select margin="normal" label="Day of Week" name="DayOfWeek" value={formData.DayOfWeek} onChange={handleChange}>
+                        {dayOfWeekOptions.map((day) => <MenuItem key={day} value={day}>{day}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth margin="normal" label="Departure Time (DepTime)" name="DepTime" type="number" value={formData.DepTime} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Scheduled Departure Time (CRSDepTime)" name="CRSDepTime" type="number" value={formData.CRSDepTime} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Elapsed Time (CRSElapsedTime)" name="CRSElapsedTime" type="number" value={formData.CRSElapsedTime} onChange={handleChange} />
+                    <TextField fullWidth select margin="normal" label="Origin Airport" name="Origin" value={formData.Origin} onChange={handleChange}>
+                        {airportOptions.map((airport) => <MenuItem key={airport.value} value={airport.value}>{airport.label}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth select margin="normal" label="Destination Airport" name="Dest" value={formData.Dest} onChange={handleChange}>
+                        {airportOptions.map((airport) => <MenuItem key={airport.value} value={airport.value}>{airport.label}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth select margin="normal" label="Carrier" name="Carrier" value={formData.Carrier} onChange={handleChange}>
+                        {carrierOptions.map((carrier) => <MenuItem key={carrier.value} value={carrier.value}>{carrier.label}</MenuItem>)}
+                    </TextField>
+                    <TextField fullWidth margin="normal" label="Flight Number (FlightNum)" name="FlightNum" type="number" value={formData.FlightNum} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Departure Hour (DepHour)" name="DepHour" type="number" value={formData.DepHour} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Departure Minute (DepMinute)" name="DepMinute" type="number" value={formData.DepMinute} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Arrival Hour (ArrHour)" name="ArrHour" type="number" value={formData.ArrHour} onChange={handleChange} />
+                    <TextField fullWidth margin="normal" label="Arrival Minute (ArrMinute)" name="ArrMinute" type="number" value={formData.ArrMinute} onChange={handleChange} />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Cancelled"
+                        name="Cancelled"
+                        type="number"
+                        value={formData.Cancelled}
+                        onChange={handleChange}
+                    />
+
+                    <TextField
+                        fullWidth
+                        select
+                        margin="normal"
+                        label="Time of Day"
+                        name="TimeOfDay"
+                        value={formData.TimeOfDay}
+                        onChange={handleChange}
+                    >
+                        {timeOfDayOptions.map((time) => (
+                            <MenuItem key={time} value={time}>{time}</MenuItem>
+                        ))}
+                    </TextField>
+
+                    <Button variant="contained" color="primary" onClick={addSearchResult}>
+                        Get Prediction
+                    </Button>
+
+                    {predictionResult !== null && (
+                        <Box mt={3}>
+                            <Typography variant="h6">Prediction Result:</Typography>
+                            <Typography variant="body1">{predictionResult}</Typography>
+                        </Box>
+                    )}
+                </Box>
             </Box>
         </Container>
     );
