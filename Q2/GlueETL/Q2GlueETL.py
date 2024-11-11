@@ -23,6 +23,10 @@ timestamped_output_path = f"s3://{source_bucket}/q2_processed_data/{current_time
 #latest_output_path = f"s3://{source_bucket}/q2_processed_data/latest"
 temp_output_path = f"s3://{source_bucket}/q2_processed_data/temp_filtered_airline_data"
 
+temp_reco_AA_path = f"s3://{source_bucket}/q2_processed_data/temp_filtered_reco_AA_airline_data"
+temp_reco_DL_path = f"s3://{source_bucket}/q2_processed_data/temp_filtered_reco_DL_airline_data"
+temp_reco_WN_path = f"s3://{source_bucket}/q2_processed_data/temp_filtered_reco_WN_airline_data"
+
 # Load data from S3
 df = spark.read.format("csv").option("header", "true").load(input_path)
 fuel_df = spark.read.format("csv").option("header", "true").load(fuel_raw_path)
@@ -106,12 +110,28 @@ df_joined = df_joined.drop("AirTime", "Distance", "FlightNum", "TaxiIn", "TailNu
 # Replace "NA" string values with actual null values (None)
 df_joined = df_joined.replace("NA", None)
 
+df_AA = df_joined \
+    .filter(df_joined['UniqueCarrier'] == "AA") \
+    .select("Year", "DayofMonth", "TaxiOut", "DepDelay", "FuelCost", "WagesCost", "TotalCost")
+
+df_DL = df_joined \
+    .filter(df_joined['UniqueCarrier'] == "DL") \
+    .select("Year", "DayofMonth", "TaxiOut", "DepDelay", "FuelCost", "WagesCost", "TotalCost")
+
+df_WN = df_joined \
+    .filter(df_joined['UniqueCarrier'] == "WN") \
+    .select("Year", "DayofMonth", "TaxiOut", "DepDelay", "FuelCost", "WagesCost", "TotalCost")
+
 ######################################## SAVE FILE ################################################
 # Save processed data as a single file to the unique timestamped path
 df_joined.coalesce(1).write.option("header", "true").mode("overwrite").format("csv").save(timestamped_output_path)
 
 # Save processed data as a single file to the "latest" path, overwriting existing data
 df_joined.coalesce(1).write.option("header", "true").mode("overwrite").format("csv").save(temp_output_path)
+
+df_AA.coalesce(1).write.option("header", "true").mode("overwrite").format("csv").save(temp_reco_AA_path)
+df_DL.coalesce(1).write.option("header", "true").mode("overwrite").format("csv").save(temp_reco_DL_path)
+df_WN.coalesce(1).write.option("header", "true").mode("overwrite").format("csv").save(temp_reco_WN_path)
 
 print(f"ETL job completed successfully.")
 print(f"Processed data saved to: {timestamped_output_path}")
@@ -147,3 +167,38 @@ if temp_csv_key:
     print(f"CSV file saved with desired filename to latest: {new_csv_key}")
 else:
     print("No CSV files found to copy.")
+    
+###################################### FOR RECOMMENDATION ################################################
+# Define desired output filenames
+desired_filenames = {
+    "temp_filtered_reco_AA_airline_data": "filtered_AA.csv",
+    "temp_filtered_reco_DL_airline_data": "filtered_DL.csv",
+    "temp_filtered_reco_WN_airline_data": "filtered_WN.csv"
+}
+
+temp_folders = list(desired_filenames.keys())
+bucket = s3.Bucket(source_bucket)
+
+# Iterate over each folder and desired filename
+for folder, filename in desired_filenames.items():
+    # Find the generated part file
+    temp_csv_key = None
+    for obj in bucket.objects.filter(Prefix=f'q2_processed_data/{folder}/'):
+        if obj.key.endswith('.csv'):
+            temp_csv_key = obj.key  # This is the generated part file key
+            break
+
+    if temp_csv_key:
+        # Define the new key for the desired filename
+        new_csv_key = f"q2_processed_data/recommendations/{filename}"
+        
+        # Copy the file to the new location with the desired name
+        copy_source = {'Bucket': source_bucket, 'Key': temp_csv_key}
+        s3.Object(source_bucket, new_csv_key).copy_from(CopySource=copy_source)
+
+        # Optionally, delete the temporary directory
+        bucket.objects.filter(Prefix=f'q2_processed_data/{folder}/').delete()
+        
+        print(f"CSV file saved with desired filename to recommendations: {new_csv_key}")
+    else:
+        print(f"No CSV files found to copy in {folder}.")
