@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import { PredictionQueryPage } from '@/pages/q1/PredictionQueryPage'
-import Visualisation from "@/pages/q2/Visualisation";
+import { Visualisation } from "@/pages/q2/Visualisation";
 
 function App() {
 
