@@ -34,9 +34,11 @@ export function Visualisation() {
     }, []);
 
     // Embed the QuickSight dashboard using the SDK
+
+    const [isEmbedded, setIsEmbedded] = useState(false);
     useEffect(() => {
         const embedDashboard = async () => {
-            if (embedUrl) {
+            if (embedUrl && !isEmbedded) {
                 const containerDiv = document.getElementById("quicksight-dashboard");
     
                 const options = {
@@ -53,9 +55,12 @@ export function Visualisation() {
                 try {
                     // Create the embedding context first
                     const embeddingContext = await QuickSightEmbedding.createEmbeddingContext();
-                    // Use the context instance to embed the dashboard
-                    const embeddedDashboard = await embeddingContext.embedDashboard(options);
-                    console.log("Dashboard embedded successfully:", embeddedDashboard);
+                    // Embed the dashboard
+                    await embeddingContext.embedDashboard(options);
+                    console.log("Dashboard embedded successfully");
+    
+                    // Set the state to indicate the dashboard is embedded
+                    setIsEmbedded(true);
                 } catch (error) {
                     console.error("Failed to embed QuickSight dashboard:", error);
                 }
@@ -63,7 +68,7 @@ export function Visualisation() {
         };
     
         embedDashboard();
-    }, [embedUrl]);
+    }, [embedUrl, isEmbedded]);
 
     // State for AI recommendation
     const [year, setYear] = useState("");
