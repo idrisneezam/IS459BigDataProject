@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Container, Typography, Box, Button, TextField } from "@mui/material";
+import { Container, Typography, Box, Button, TextField, MenuItem} from "@mui/material";
 import * as QuickSightEmbedding from "amazon-quicksight-embedding-sdk";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as d3 from "d3";
@@ -34,7 +34,6 @@ export function Visualisation() {
     }, []);
 
     // Embed the QuickSight dashboard using the SDK
-
     const [isEmbedded, setIsEmbedded] = useState(false);
     useEffect(() => {
         const embedDashboard = async () => {
@@ -210,19 +209,36 @@ export function Visualisation() {
                     label="Year"
                     variant="outlined"
                     fullWidth
+                    select
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
-                    type="number"
                     margin="normal"
-                />
+                >
+                    {[1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008].map((yearOption) => (
+                        <MenuItem key={yearOption} value={yearOption}>
+                            {yearOption}
+                        </MenuItem>
+                    ))}
+                </TextField>
                 <TextField
                     label="Airline"
                     variant="outlined"
                     fullWidth
+                    select
                     value={airline}
                     onChange={(e) => setAirline(e.target.value)}
                     margin="normal"
-                />
+                >
+                    {[
+                        { label: "Delta Airlines (DL)", value: "DL" },
+                        { label: "Southwest Airlines (WN)", value: "WN" },
+                        { label: "American Airlines (AA)", value: "AA" },
+                    ].map((airlineOption) => (
+                        <MenuItem key={airlineOption.value} value={airlineOption.value}>
+                            {airlineOption.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
                 <Button
                     variant="contained"
                     color="primary"
